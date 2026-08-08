@@ -39,17 +39,22 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 
 ### Model Comparison Table
 
-ML Model NameAccuracyAUCPrecisionRecallF1MCC
-****
-**Logistic Regression**0.87230.94660.87180.84250.85690.7421
-****
-**Decision Tree**0.81410.81250.79540.79470.79500.6250
-****
-**kNN**0.85390.91320.84950.82390.83650.7047
-****
-**Naive Bayes**0.86750.93490.85910.84690.85290.7325
-****
-**Random Forest (Ensemble)**0.86870.93840.86530.84160.85330.7348
+### Model-by-Model Performance Summary
+
+* **Logistic Regression**  
+  Accuracy: `0.8723` | AUC Score: `0.9466` | Precision: `0.8718` | Recall: `0.8425` | F1-Score: `0.8569` | MCC Score: `0.7421`
+
+* **Decision Tree**  
+  Accuracy: `0.8141` | AUC Score: `0.8125` | Precision: `0.7954` | Recall: `0.7947` | F1-Score: `0.7950` | MCC Score: `0.6250`
+
+* **kNN**  
+  Accuracy: `0.8539` | AUC Score: `0.9132` | Precision: `0.8495` | Recall: `0.8239` | F1-Score: `0.8365` | MCC Score: `0.7047`
+
+* **Naive Bayes**  
+  Accuracy: `0.8675` | AUC Score: `0.9349` | Precision: `0.8591` | Recall: `0.8469` | F1-Score: `0.8529` | MCC Score: `0.7325`
+
+* **Random Forest (Ensemble)**  
+  Accuracy: `0.8687` | AUC Score: `0.9384` | Precision: `0.8653` | Recall: `0.8416` | F1-Score: `0.8533` | MCC Score: `0.7348`
 
 
 ### Model Performance Observations
