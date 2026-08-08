@@ -33,7 +33,7 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 ### c. GitHub Repository Link
 
 * **Live Repository URL:** [Insert your clickable GitHub Link here]
-* **Live Deployed App URL:** [Insert your Streamlit Community Cloud share link here]
+* **Live Deployed App URL:** https://2025ac05091-ml-sem1assignment2.streamlit.app
 
 ### d. Models Used & Performance Evaluation
 
