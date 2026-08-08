@@ -32,7 +32,7 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 
 ### c. GitHub Repository Link
 
-* **Live Repository URL:** [Insert your clickable GitHub Link here]
+* **Live Repository URL:** https://github.com/2025ac05091/ML-Sem1Assignment2.git
 * **Live Deployed App URL:** https://2025ac05091-ml-sem1assignment2.streamlit.app
 
 ### d. Models Used & Performance Evaluation
