@@ -39,8 +39,6 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 
 ### Model Comparison Table
 
-### Model-by-Model Performance Summary
-
 * **Logistic Regression**  
   Accuracy: `0.8723` | AUC Score: `0.9466` | Precision: `0.8718` | Recall: `0.8425` | F1-Score: `0.8569` | MCC Score: `0.7421`
 
@@ -71,4 +69,4 @@ ML Model NameObservation about model performance
 ****
 **Random Forest (Ensemble)**Second-best overall model (86.87% Accuracy, 73.48% MCC). Effectively controls the high variance of regular decision trees via localized feature bagging to produce high balanced stability.
 ****
-**Overall Winner for your dataset?****Logistic Regression** is the clear winner. It delivers the maximum predictive stability, leading across 5 out of the 6 evaluated performance dimensions for this heart disease clinical trial split.
+**Overall Winner****Logistic Regression** is the clear winner. It delivers the maximum predictive stability, leading across 5 out of the 6 evaluated performance dimensions for this heart disease clinical trial split.
