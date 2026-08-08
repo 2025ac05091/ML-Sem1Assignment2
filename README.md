@@ -1,4 +1,4 @@
-### BITS WILP M.Tech (AIML/DSE) - Machine Learning Assignment 2
+### BITS WILP M.Tech AIML - Machine Learning Assignment 2
 
 **Student ID:** 2025AC05091
 **Course:** Machine Learning (NSP4) 
