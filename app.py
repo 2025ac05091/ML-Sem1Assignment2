@@ -33,7 +33,7 @@ except FileNotFoundError:
     st.error("Missing 'models.pkl' file. Please run your training script first.")
     st.stop()
 
-# Section 1: Main Page Configuration Setup (Stacked Layout)
+# Main Page Configuration Setup (Stacked Layout)
 st.subheader("Dashboard Configuration")
 
 dropdown_col, _ = st.columns([1, 3])
@@ -45,7 +45,7 @@ with config_container_col:
     # 1. Constrained width file uploader element
     uploaded_file = st.file_uploader("2. Upload Test Dataset (CSV) [Optional - Defaults to preloaded data]", type=["csv"])
 
-# Extract feature names from scaler to align data frames perfectly
+# Extract feature names from scaler to align data frames
 feature_names = scaler.feature_names_in_ if hasattr(scaler, "feature_names_in_") else None
 
 # Pre-loading Logic: Use uploaded file if present, otherwise fall back to local default file
@@ -72,9 +72,9 @@ if test_df is not None:
         # Show status indicator for dataset context
         with config_container_col:
             if is_using_default:
-                st.info("💡 Running dashboard using pre-loaded default 'test_data.csv'.")
+                st.info("Running dashboard using pre-loaded default 'test_data.csv'.")
             else:
-                st.success("✅ Running dashboard using your uploaded dataset.")
+                st.success("Running dashboard using your uploaded dataset.")
                 
         # Verify target variable existence
         target_col = 'Heart Disease'
@@ -123,21 +123,18 @@ if test_df is not None:
         
         cm = confusion_matrix(y_test, y_pred_selected)
         
-        # Reduced figsize from (5, 4) to (2.5, 2) for a smaller footprint
         fig, ax = plt.subplots(figsize=(2.5, 2))
-        
-        # Reduced font sizes via annot_kws to prevent text overlapping in smaller box
+
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
                     xticklabels=['Absence', 'Presence'], 
                     yticklabels=['Absence', 'Presence'], 
                     annot_kws={"size": 9}, ax=ax)
         
-        # Compact label sizes
+
         plt.ylabel('Actual', fontsize=8)
         plt.xlabel('Predicted', fontsize=8)
         ax.tick_params(labelsize=8)
         
-        # Render the smaller matrix using a custom column width or layout container
         matrix_col, _ = st.columns([1, 3])
         with matrix_col:
             st.pyplot(fig)
@@ -146,7 +143,7 @@ if test_df is not None:
         st.error(f"Error processing dataset: {e}")
 
 
-# Section 2: Interactive Real-Time Prediction Input (Always available)
+# Interactive Real-Time Prediction Input (Always available)
 st.markdown("---")
 st.subheader("Live Test-Data Prediction")
 st.write(f"Adjust the features below to view the selected model's ({selected_model_name}) instant prediction.")
@@ -155,7 +152,6 @@ st.write(f"Adjust the features below to view the selected model's ({selected_mod
 features = []
 cols = st.columns(4)
 
-# Re-use known feature labels if available, otherwise generic
 labels = feature_names if feature_names is not None else [f"Feature {i+1}" for i in range(12)]
 
 for i, label in enumerate(labels):
