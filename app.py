@@ -2,13 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.metrics import (
-    accuracy_score, 
-    precision_score, 
-    recall_score, 
-    f1_score, 
-    roc_auc_score, 
-    matthews_corrcoef
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    matthews_corrcoef,
+    confusion_matrix
 )
 
 # Set page configuration
@@ -22,103 +25,159 @@ def load_assets():
     with open("models.pkl", "rb") as f:
         return pickle.load(f)
 
-assets = load_assets()
-models = assets["models"]
-scaler = assets["scaler"]
-
-# Load test data to compute evaluation metrics live
-@st.cache_data
-def load_test_data():
-    test_df = pd.read_csv("test_data.csv")
-    X_test_raw = test_df.drop(columns=['Heart Disease'])
-    y_test = test_df['Heart Disease']
-    return X_test_raw, y_test
-
 try:
-    X_test_raw, y_test = load_test_data()
-    
-    # Transform test data using the saved training scaler
-    # Passing a pure DataFrame with correct column headers to prevent UserWarning
-    X_test_scaled = scaler.transform(X_test_raw)
-
-    # Calculate evaluation metrics live across all models
-    metrics = {}
-    for name, model in models.items():
-        y_pred = model.predict(X_test_scaled)
-        
-        # Get probabilities for the positive class (Presence = 1) to calculate AUC
-        if hasattr(model, "predict_proba"):
-            y_prob = model.predict_proba(X_test_scaled)[:, 1]
-            auc_val = roc_auc_score(y_test, y_prob)
-        else:
-            auc_val = np.nan
-
-        metrics[name] = {
-            "Accuracy": accuracy_score(y_test, y_pred),
-            "AUC Score": auc_val,
-            "Precision": precision_score(y_test, y_pred, average='binary'),
-            "Recall": recall_score(y_test, y_pred, average='binary'),
-            "F1-Score": f1_score(y_test, y_pred, average='binary'),
-            "MCC Score": matthews_corrcoef(y_test, y_pred)
-        }
+    assets = load_assets()
+    models = assets["models"]
+    scaler = assets["scaler"]
 except FileNotFoundError:
-    st.error("Missing 'test_data.csv' in the directory. Please run your training script first.")
+    st.error("Missing 'models.pkl' file. Please run your training script first.")
     st.stop()
 
-# Sidebar for Model Selection
-st.sidebar.header("Configuration")
-selected_model_name = st.sidebar.selectbox("Choose a Classification Model", list(models.keys()))
+# Section 1: Main Page Configuration Setup (Stacked Layout)
+st.subheader("Dashboard Configuration")
 
-# Section 1: Display Evaluation Metrics
-st.subheader(f"Performance Metrics: {selected_model_name}")
-col1, col2, col3, col4, col5, col6 = st.columns(6)
-model_metrics = metrics[selected_model_name]
+dropdown_col, _ = st.columns([1, 3])
+with dropdown_col:
+    selected_model_name = st.selectbox("1. Choose a Classification Model", list(models.keys()))
 
-col1.metric("Accuracy", f"{model_metrics['Accuracy']:.4f}")
-col2.metric("AUC Score", f"{model_metrics['AUC Score']:.4f}" if not np.isnan(model_metrics['AUC Score']) else "N/A")
-col3.metric("Precision", f"{model_metrics['Precision']:.4f}")
-col4.metric("Recall", f"{model_metrics['Recall']:.4f}")
-col5.metric("F1-Score", f"{model_metrics['F1-Score']:.4f}")
-col6.metric("MCC Score", f"{model_metrics['MCC Score']:.4f}")
+config_container_col, _ = st.columns([3, 2])
+with config_container_col:
+    # 1. Constrained width file uploader element
+    uploaded_file = st.file_uploader("2. Upload Test Dataset (CSV) [Optional - Defaults to preloaded data]", type=["csv"])
 
-# Comparative Table
-st.subheader("Model Comparison Summary")
-st.dataframe(pd.DataFrame(metrics).T.style.highlight_max(axis=0, color="#d4edda"))
+# Extract feature names from scaler to align data frames perfectly
+feature_names = scaler.feature_names_in_ if hasattr(scaler, "feature_names_in_") else None
 
-# Section 2: Interactive Real-Time Prediction Input
-st.subheader("Live Test-Data Prediction")
-st.write("Adjust the features below to view the selected model's instant prediction.")
+# Pre-loading Logic: Use uploaded file if present, otherwise fall back to local default file
+test_df = None
+is_using_default = False
 
-feature_labels = list(X_test_raw.columns)
-user_inputs = {}
-cols = st.columns(4) 
+if uploaded_file is not None:
+    try:
+        test_df = pd.read_csv(uploaded_file)
+    except Exception as e:
+        st.error(f"Error reading uploaded file: {e}")
+else:
+    try:
+        # Automatically load the default test file from the local path
+        test_df = pd.read_csv("test_data.csv")
+        is_using_default = True
+    except FileNotFoundError:
+        with config_container_col:
+            st.warning("No custom file uploaded, and default 'test_data.csv' was not found locally.")
 
-for i, label in enumerate(feature_labels):
-    with cols[i % 4]:
-        default_val = float(X_test_raw[label].median())
+# Process data if any dataframe is successfully loaded (either uploaded or default)
+if test_df is not None:
+    try:
+        # Show status indicator for dataset context
+        with config_container_col:
+            if is_using_default:
+                st.info("💡 Running dashboard using pre-loaded default 'test_data.csv'.")
+            else:
+                st.success("✅ Running dashboard using your uploaded dataset.")
+                
+        # Verify target variable existence
+        target_col = 'Heart Disease'
+        if target_col not in test_df.columns:
+            st.error(f"The test dataset must contain the target column: '{target_col}'")
+            st.stop()
+            
+        X_test_raw = test_df.drop(columns=[target_col])
+        y_test = test_df[target_col]
         
-        # Keep numeric values cleanly separated
-        val = st.number_input(f"{label}", value=default_val, key=f"feat_{label}")
-        user_inputs[label] = val
+        # Explicit target mapping if it contains string values
+        if y_test.dtype == 'object':
+            y_test = y_test.map({'Presence': 1, 'Absence': 0})
+        
+        # Calculate dynamic evaluation metrics for all models
+        metrics = {}
+        for name, model in models.items():
+            # Align features using exact name order to suppress scikit-learn warnings
+            X_test_scaled = scaler.transform(X_test_raw[feature_names] if feature_names is not None else X_test_raw)
+            y_pred = model.predict(X_test_scaled)
+            
+            if hasattr(model, "predict_proba"):
+                y_prob = model.predict_proba(X_test_scaled)[:, 1]
+                auc_val = roc_auc_score(y_test, y_prob)
+            else:
+                auc_val = np.nan
+                
+            metrics[name] = {
+                "Accuracy": accuracy_score(y_test, y_pred),
+                "AUC Score": auc_val,
+                "Precision": precision_score(y_test, y_pred, zero_division=0),
+                "Recall": recall_score(y_test, y_pred, zero_division=0),
+                "F1-Score": f1_score(y_test, y_pred, zero_division=0),
+                "MCC Score": matthews_corrcoef(y_test, y_pred)
+            }
+            
+        st.markdown("---")
+        # Display Comparative Table Summary
+        st.subheader("Model Comparison Summary")
+        st.dataframe(pd.DataFrame(metrics).T.style.highlight_max(axis=0, color="lightgreen"), use_container_width=True)
+        
+        st.subheader(f"Confusion Matrix: {selected_model_name}")
+        chosen_model = models[selected_model_name]
+        X_test_scaled = scaler.transform(X_test_raw[feature_names] if feature_names is not None else X_test_raw)
+        y_pred_selected = chosen_model.predict(X_test_scaled)
+        
+        cm = confusion_matrix(y_test, y_pred_selected)
+        
+        # Reduced figsize from (5, 4) to (2.5, 2) for a smaller footprint
+        fig, ax = plt.subplots(figsize=(2.5, 2))
+        
+        # Reduced font sizes via annot_kws to prevent text overlapping in smaller box
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
+                    xticklabels=['Absence', 'Presence'], 
+                    yticklabels=['Absence', 'Presence'], 
+                    annot_kws={"size": 9}, ax=ax)
+        
+        # Compact label sizes
+        plt.ylabel('Actual', fontsize=8)
+        plt.xlabel('Predicted', fontsize=8)
+        ax.tick_params(labelsize=8)
+        
+        # Render the smaller matrix using a custom column width or layout container
+        matrix_col, _ = st.columns([1, 3])
+        with matrix_col:
+            st.pyplot(fig)
+        
+    except Exception as e:
+        st.error(f"Error processing dataset: {e}")
+
+
+# Section 2: Interactive Real-Time Prediction Input (Always available)
+st.markdown("---")
+st.subheader("Live Test-Data Prediction")
+st.write(f"Adjust the features below to view the selected model's ({selected_model_name}) instant prediction.")
+
+# Dynamic input form generation matching exactly 12 attributes
+features = []
+cols = st.columns(4)
+
+# Re-use known feature labels if available, otherwise generic
+labels = feature_names if feature_names is not None else [f"Feature {i+1}" for i in range(12)]
+
+for i, label in enumerate(labels):
+    with cols[i % 4]:
+        val = st.number_input(f"{label}", min_value=0.0, max_value=5000.0, value=10.0 * (i+1), key=f"input_{i}")
+        features.append(val)
 
 # Run Prediction Logic
 if st.button("Run Prediction Inference"):
-
-    input_df = pd.DataFrame([user_inputs])
-    input_df = input_df[feature_labels] # Forces exact order match with training schema
-    
-    # Scale the input data using the saved scaler
-    scaled_input = scaler.transform(input_df) 
+    # Convert input list directly to DataFrame with original training feature headers
+    input_df = pd.DataFrame([features], columns=labels)
+    scaled_input = scaler.transform(input_df)
     
     chosen_model = models[selected_model_name]
     prediction = chosen_model.predict(scaled_input)
-    probabilities = chosen_model.predict_proba(scaled_input)
     
-    # Map numerical values back to explicit assignment labels
-    outcome_mapped = "Presence (Heart Disease)" if prediction[0] == 1 else "Absence (Healthy)"
+    # Class outcome interpretation
+    outcome_text = "Presence (1)" if prediction == 1 else "Absence (0)"
+    st.success(f"Predicted Class Target Outcome: **{outcome_text}**")
     
-    st.success(f"Predicted Class Target Outcome: **{outcome_mapped}**")
-    
-    # Format prediction confidences cleanly
-    prob_df = pd.DataFrame(probabilities, columns=["Absence Probability", "Presence Probability"])
-    st.write("Prediction Confidence Probabilities:", prob_df)
+    if hasattr(chosen_model, "predict_proba"):
+        probabilities = chosen_model.predict_proba(scaled_input)
+        st.write("Prediction Confidence Probabilities:")
+        prob_df = pd.DataFrame(probabilities, columns=['Absence (0)', 'Presence (1)'])
+        st.dataframe(prob_df)
