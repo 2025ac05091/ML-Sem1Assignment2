@@ -16,7 +16,7 @@ from sklearn.metrics import (
 
 # Set page configuration
 st.set_page_config(page_title="2025AC05091 Multi Model App", layout="wide")
-st.title("Multi-Model Classification Dashboard")
+st.title("Multi-Model Classification Dashboard for Heart Disease Prediction")
 st.write("2025AC05091 Machine Learning Assignment 2")
 
 # Load trained components (Contains models and scaler)
