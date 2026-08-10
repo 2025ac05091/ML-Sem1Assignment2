@@ -1,7 +1,7 @@
 ### BITS WILP M.Tech (AIML/DSE) - Machine Learning Assignment 2
 
 **Student ID:** 2025AC05091
-**Course:** Machine Learning (NSP4) 
+**Course:** Machine Learning 
 
 ### a. Problem Statement
 
@@ -10,7 +10,7 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 ### b. Dataset Description
 
 * **Dataset Name:** Heart Disease Prediction Dataset
-* **Instance Count:** 270 instances (As provided in the base dataset configuration)
+* **Instance Count:** 12453 instances (samples)
 * **Feature Size:** 13 clinical features + 1 Target attribute
 * **Target Variable:** Heart Disease (Presence = 1, Absence = 0)
 
