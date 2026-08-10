@@ -42,10 +42,9 @@ with dropdown_col:
 
 config_container_col, _ = st.columns([3, 2])
 with config_container_col:
-    # 1. Constrained width file uploader element
     uploaded_file = st.file_uploader("2. Upload Test Dataset (CSV) [Optional - Defaults to preloaded data]", type=["csv"])
 
-# Extract feature names from scaler to align data frames
+# Extract feature names from scaler to align data frames perfectly
 feature_names = scaler.feature_names_in_ if hasattr(scaler, "feature_names_in_") else None
 
 # Pre-loading Logic: Use uploaded file if present, otherwise fall back to local default file
@@ -59,7 +58,6 @@ if uploaded_file is not None:
         st.error(f"Error reading uploaded file: {e}")
 else:
     try:
-        # Automatically load the default test file from the local path
         test_df = pd.read_csv("test_data.csv")
         is_using_default = True
     except FileNotFoundError:
@@ -69,14 +67,12 @@ else:
 # Process data if any dataframe is successfully loaded (either uploaded or default)
 if test_df is not None:
     try:
-        # Show status indicator for dataset context
         with config_container_col:
             if is_using_default:
                 st.info("Running dashboard using pre-loaded default 'test_data.csv'.")
             else:
                 st.success("Running dashboard using your uploaded dataset.")
                 
-        # Verify target variable existence
         target_col = 'Heart Disease'
         if target_col not in test_df.columns:
             st.error(f"The test dataset must contain the target column: '{target_col}'")
@@ -85,15 +81,14 @@ if test_df is not None:
         X_test_raw = test_df.drop(columns=[target_col])
         y_test = test_df[target_col]
         
-        # Explicit target mapping if it contains string values
         if y_test.dtype == 'object':
             y_test = y_test.map({'Presence': 1, 'Absence': 0})
         
-        # Calculate dynamic evaluation metrics for all models
         metrics = {}
         for name, model in models.items():
-            # Align features using exact name order to suppress scikit-learn warnings
-            X_test_scaled = scaler.transform(X_test_raw[feature_names] if feature_names is not None else X_test_raw)
+            # Force alignment via explicit list indexing matching training features
+            X_test_aligned = X_test_raw[feature_names] if feature_names is not None else X_test_raw
+            X_test_scaled = scaler.transform(X_test_aligned)
             y_pred = model.predict(X_test_scaled)
             
             if hasattr(model, "predict_proba"):
@@ -112,25 +107,24 @@ if test_df is not None:
             }
             
         st.markdown("---")
-        # Display Comparative Table Summary
         st.subheader("Model Comparison Summary")
         st.dataframe(pd.DataFrame(metrics).T.style.highlight_max(axis=0, color="lightgreen"), use_container_width=True)
         
         st.subheader(f"Confusion Matrix: {selected_model_name}")
         chosen_model = models[selected_model_name]
-        X_test_scaled = scaler.transform(X_test_raw[feature_names] if feature_names is not None else X_test_raw)
+        
+        X_test_aligned = X_test_raw[feature_names] if feature_names is not None else X_test_raw
+        X_test_scaled = scaler.transform(X_test_aligned)
         y_pred_selected = chosen_model.predict(X_test_scaled)
         
         cm = confusion_matrix(y_test, y_pred_selected)
         
         fig, ax = plt.subplots(figsize=(2.5, 2))
-
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
                     xticklabels=['Absence', 'Presence'], 
                     yticklabels=['Absence', 'Presence'], 
                     annot_kws={"size": 9}, ax=ax)
         
-
         plt.ylabel('Actual', fontsize=8)
         plt.xlabel('Predicted', fontsize=8)
         ax.tick_params(labelsize=8)
@@ -141,7 +135,6 @@ if test_df is not None:
         
     except Exception as e:
         st.error(f"Error processing dataset: {e}")
-
 
 # Interactive Real-Time Prediction Input (Always available)
 st.markdown("---")
@@ -154,23 +147,42 @@ cols = st.columns(4)
 
 labels = feature_names if feature_names is not None else [f"Feature {i+1}" for i in range(12)]
 
+# Define realistic baseline values based on a standard heart disease profile context 
+# to keep inputs inside typical scaler ranges
+baseline_defaults = {
+    "age": 50.0, "sex": 1.0, "chest pain type": 3.0, "bp": 130.0, "cholesterol": 240.0,
+    "fbs": 0.0, "ekg results": 1.0, "max hr": 150.0, "exercise angina": 0.0, 
+    "st depression": 1.0, "slope of st": 2.0, "number of vessels fluro": 0.0, "thallium": 3.0
+}
+
 for i, label in enumerate(labels):
+    # Lookup lowercase string matches or default to a safe median scale value
+    default_val = baseline_defaults.get(label.lower().strip(), 1.0 if "sex" in label.lower() or "fbs" in label.lower() else 50.0)
     with cols[i % 4]:
-        val = st.number_input(f"{label}", min_value=0.0, max_value=5000.0, value=10.0 * (i+1), key=f"input_{i}")
+        val = st.number_input(f"{label}", min_value=0.0, max_value=5000.0, value=float(default_val), key=f"input_{i}")
         features.append(val)
 
 # Run Prediction Logic
 if st.button("Run Prediction Inference"):
-    # Convert input list directly to DataFrame with original training feature headers
+    # Create DataFrame to ensure strict column mapping matching the training scaler schema
     input_df = pd.DataFrame([features], columns=labels)
+    
+    # Force sorting layout to match original feature order sequence explicitly
+    if feature_names is not None:
+        input_df = input_df[feature_names]
+        
     scaled_input = scaler.transform(input_df)
     
     chosen_model = models[selected_model_name]
     prediction = chosen_model.predict(scaled_input)
     
     # Class outcome interpretation
-    outcome_text = "Presence (1)" if prediction == 1 else "Absence (0)"
-    st.success(f"Predicted Class Target Outcome: **{outcome_text}**")
+    outcome_text = "Presence (1)" if prediction[0] == 1 else "Absence (0)"
+    
+    if prediction[0] == 1:
+        st.error(f"Predicted Class Target Outcome: **{outcome_text}**")
+    else:
+        st.success(f"Predicted Class Target Outcome: **{outcome_text}**")
     
     if hasattr(chosen_model, "predict_proba"):
         probabilities = chosen_model.predict_proba(scaled_input)
