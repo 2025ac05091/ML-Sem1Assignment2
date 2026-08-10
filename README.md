@@ -1,7 +1,7 @@
-### BITS WILP M.Tech AIML - Machine Learning Assignment 2
+### BITS WILP M.Tech (AIML/DSE) - Machine Learning Assignment 2
 
 **Student ID:** 2025AC05091
-**Course:** Machine Learning
+**Course:** Machine Learning (NSP4) 
 
 ### a. Problem Statement
 
@@ -59,14 +59,14 @@ The goal of this project is to build, evaluate, and deploy an end-to-end Machine
 
 ML Model NameObservation about model performance
 ****
-**Logistic Regression**Top overall performer across almost all dimensions. Achieved the highest metrics for Accuracy (87.23%), AUC (94.66%), Precision (87.18%), F1-Score (85.69%), and MCC (74.21%). It effectively handles the linear clinical indicators with strong stability.
+**Logistic Regression**Top performer for global metrics. Achieved the highest metrics for Accuracy (87.27%), AUC (94.66%), and MCC Score (74.29%). It effectively handles the linear clinical indicators with strong predictive stability, though it compromises slightly on disease sensitivity.
 ****
-**Decision Tree**Lowest overall performer across all categories (81.41% Accuracy, 62.50% MCC). This indicates structural overfitting on the limited clinical feature bounds, causing higher variance when encountering unseen test sets.
+**Decision Tree**Lowest overall performer across global categories (84.83% Accuracy, 69.56% MCC). However, it achieved the highest metric for Precision (88.29%). This indicates structural variance when encountering unseen test sets, though it excels at minimizing false positive alarms.
 ****
-**kNN**Delivered baseline stability (85.39% Accuracy, 70.47% MCC). Benefited heavily from standard feature scaling to properly compute multi-dimensional Euclidean vector distances.
+**kNN**Delivered baseline stability (86.19% Accuracy, 72.10% MCC). Benefited heavily from standard feature scaling to properly compute multi-dimensional Euclidean vector distances across clinical bounds.
 ****
-**Naive Bayes**Best model for disease sensitivity, achieving the top structural **Recall (84.69%)**. It successfully minimizes dangerous false negative diagnostic misses, despite making strong independent feature assumptions.
+**Naive Bayes**Highly competitive statistical competitor (86.71% Accuracy, 73.15% MCC). It successfully delivers balanced sensitivity (83.27% Recall) and high predictive probability mapping (93.64% AUC) despite making strong independent feature assumptions.
 ****
-**Random Forest (Ensemble)**Second-best overall model (86.87% Accuracy, 73.48% MCC). Effectively controls the high variance of regular decision trees via localized feature bagging to produce high balanced stability.
+**Random Forest (Ensemble)**Top model for disease sensitivity and macro-balance. Achieved the highest structural metrics for Recall (84.51%) and F1-Score (85.73%) while maintaining a near-top Accuracy of 87.23%. It effectively controls the high variance of regular decision trees via localized feature bagging to produce high balanced stability.
 ****
-**Overall Winner****Logistic Regression** is the clear winner. It delivers the maximum predictive stability, leading across 5 out of the 6 evaluated performance dimensions for this heart disease clinical trial split.
+**Overall Winner****Random Forest** is the chosen winner based on clinical implications. While Logistic Regression holds a marginal lead in global accuracy, Random Forest delivers the maximum diagnostic safety by maximizing Recall (84.51%), which successfully minimizes dangerous false negative diagnostic misses where undetected heart disease carries life-threatening risks.
